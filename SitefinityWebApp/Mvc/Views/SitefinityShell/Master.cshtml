@@ -1,0 +1,107 @@
+﻿@using System.Web.Mvc
+@using System.Web.Mvc.Html
+@using Telerik.Sitefinity.Frontend.Mvc.Helpers
+@using Telerik.Sitefinity.UI.MVC;
+
+@using SitefinityWebApp.Mvc.Controllers
+
+<!--<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>-->
+<script type="text/javascript" src="../Shell/jquery.console.js"></script>
+<!-- Everything beyond this point is user-customized -->
+<script type="text/javascript">
+	var list = "";
+	var root = "";
+	var resource = "pages";
+	var site = "";
+	var provider = "";
+	var controller;
+	$(document).ready(function () {
+		var console = $(".console");
+		controller = console.console({
+			promptLabel: 'Pages> ',
+			autofocus: true,
+			completeHandle: function (promptText) {
+				promptText = promptText.trim();
+				if (promptText == '') return;
+				var words = promptText.split(" ");
+				var keyword = words[words.length - 1];
+				var len = keyword.length;
+				return list.filter(function (elt) { return elt.toLowerCase().startsWith(keyword.toLowerCase()); })
+						   .map(function (elt) { return elt.substring(len, 36); });
+			},
+			cols: 80,
+			commandValidate: function (line) {
+				if (line == "") return false;
+				else return true;
+			},
+			commandHandle: function (line, report) {
+				$.ajax({
+					url: '../api/shellservice', data: { root: root, rsc: resource, cmd: line, site: site, provider:provider },
+					success: function (data) {
+						if (data.response != '') list = data.response.split("\n");
+						if (data.path != '') controller.promptLabel = data.path;
+						if (data.root != '') root = data.root;
+						if (data.resource != '') resource = data.resource;
+						if (data.site != '') site = data.site;
+						provider = data.provider;
+						if (data.error != '') report([{ msg: data.error, className: 'jquery-console-message-error' }]);
+						if (data.response != '' || data.error == '') report([{ msg: data.response, className: 'jquery-console-message-success' }]);
+					},
+					error: function (xhr, ajaxOptions, thrownError) {
+						report([{ msg: "Error: " + xhr.status + '\n' + thrownError, className: 'jquery-console-message-error' }]);
+					}
+				});
+			},
+			animateScroll: true,
+			promptHistory: true,
+		});
+	});
+</script>
+<style type="text/css" media="screen">
+	div.console {
+		word-wrap: break-word;
+	}
+	div.console {
+		padding-left: 10px;
+		font-size: 14px;
+		margin-top: 1em;
+	}
+
+		div.console div.jquery-console-inner {
+			width: 1200px;
+			height: 800px;
+			background: #efefef;
+			padding: 0.5em;
+			overflow: auto;
+		}
+
+		div.console div.jquery-console-prompt-box {
+			color: #444;
+			font-family: monospace;
+		}
+
+		div.console div.jquery-console-focus span.jquery-console-cursor {
+			background: #333;
+			color: #eee;
+			font-weight: bold;
+		}
+
+		div.console div.jquery-console-message-error {
+			color: #ef0505;
+			font-family: sans-serif;
+			font-weight: bold;
+			padding: 0.1em;
+		}
+
+		div.console div.jquery-console-message-success {
+			color: #187718;
+			font-family: monospace;
+			padding: 0.1em;
+		}
+
+		div.console span.jquery-console-prompt-label {
+			font-weight: bold;
+		}
+</style>
+
+<div class="console" />
