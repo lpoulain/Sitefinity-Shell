@@ -34,14 +34,18 @@ namespace SitefinitySupport.Shell
 
 			if (this.root is Library)
 			{
-				items = libMgr.GetChildItems(root).Where(i => i.Status == Telerik.Sitefinity.GenericContent.Model.ContentLifecycleStatus.Live && i.Parent.Id == root.Id && i.FolderId == null).ToList();
+				items = libMgr.GetChildItems(root).Where(i => i.Status == Telerik.Sitefinity.GenericContent.Model.ContentLifecycleStatus.Live &&
+															  i.Parent.Id == root.Id &&
+															  i.FolderId == null).ToList();
 				folders = libMgr.GetChildFolders(root).Where(f => f.ParentId == null).Select<IFolder, MediaTree>(f => new MediaTree(f, level-1, libMgr)).ToList();
 			}
 			else
 			{
-				items = libMgr.GetChildItems(root).Where(i => i.Status == Telerik.Sitefinity.GenericContent.Model.ContentLifecycleStatus.Live && i.FolderId == root.Id).ToList();
+				items = libMgr.GetChildItems(root).Where(i => i.Status == Telerik.Sitefinity.GenericContent.Model.ContentLifecycleStatus.Live &&
+															  i.FolderId == root.Id).ToList();
 				folders = libMgr.GetChildFolders(root).Where(f => f.ParentId == root.Id).Select<IFolder, MediaTree>(f => new MediaTree(f, level - 1, libMgr)).ToList();
 			}
+			items = items.Where(i => !i.IsDeleted).ToList();
 		}
 
 		// Top-level: go through all the Libraries for all the providers
