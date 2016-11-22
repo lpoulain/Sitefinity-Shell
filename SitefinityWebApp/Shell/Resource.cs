@@ -29,6 +29,7 @@ namespace SitefinitySupport.Shell
 		public virtual void CMD_touch() { svc.Set_Error("Command not supported for " + name); }
 		public virtual void CMD_compare(Arguments args) { svc.Set_Error("Command not supported for " + name); }
 		public virtual void CMD_republish(Arguments args) { svc.Set_Error("Command not supported for " + name); }
+		public virtual void CMD_permissions(Arguments args) { svc.Set_Error("Command not supported for " + name); }
 		public virtual void CMD_display(Arguments args)
 		{
 			display = args.Keys;

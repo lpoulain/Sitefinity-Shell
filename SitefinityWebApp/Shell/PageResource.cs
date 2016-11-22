@@ -8,6 +8,9 @@ using Telerik.Sitefinity.Abstractions;
 using Telerik.Sitefinity.Configuration;
 using Telerik.Sitefinity.Modules.Pages;
 using Telerik.Sitefinity.Pages.Model;
+using Telerik.Sitefinity.Security;
+using Telerik.Sitefinity.Security.Configuration;
+using Telerik.Sitefinity.Security.Model;
 using Telerik.Sitefinity.Services;
 using Telerik.Sitefinity.Versioning;
 
@@ -16,8 +19,9 @@ namespace SitefinitySupport.Shell
 	public class PageTree
 	{
 		public PageNode root;
-		bool filterIn;
+		public bool filterIn;
 		public List<PageTree> children;
+		public int permissionGroup;
 
 		// If pageMgr is passed => recursive build
 		public PageTree(PageNode n, PageManager pageMgr = null)
@@ -38,16 +42,16 @@ namespace SitefinitySupport.Shell
 			children = nodes.Select<PageNode, PageTree>(n => new PageTree(n, pageMgr)).ToList();
 		}
 
-		public bool Filter(Func<PageNode, bool> filter)
+		public bool Filter(Func<PageTree, bool> filter)
 		{
-			if (root != null) filterIn = filter(root);
+			if (root != null) filterIn = filter(this);
 			children = children.Where(p => p.Filter(filter)).ToList();
 
 			return (filterIn || children.Count > 0);
 		}
 
-		public void Update(Action<PageNode> action) {
-			if (root != null && filterIn) action(root);
+		public void Update(Action<PageTree> action) {
+			if (root != null && filterIn) action(this);
 			foreach (PageTree child in children)
 				child.Update(action);
 		}
@@ -73,6 +77,12 @@ namespace SitefinitySupport.Shell
 					if (display.Contains("template")) result += " - " + pdata.Template.Name;
 					if (display.Contains("requiressl")) result += " - " + pdata.RequireSsl;
 					if (display.Contains("cache")) result += " - " + (pdata.OutputCacheProfile == "" ? "site" : pdata.OutputCacheProfile);
+				}
+
+				if (display.Contains("permission"))
+				{
+					if (permissionGroup == 0) result += " - Inherits permissions";
+					else result += " - Permission group #" + permissionGroup.ToString();
 				}
 
 				result += "\n";
@@ -127,21 +137,21 @@ namespace SitefinitySupport.Shell
 
 		public override void CMD_filter(Arguments args)
 		{
-			List<Func<PageNode, bool>> filters = new List<Func<PageNode, bool>>();
+			List<Func<PageTree, bool>> filters = new List<Func<PageTree, bool>>();
 			VersionManager versionMgr = VersionManager.GetManager();
 
 			if (args.ContainsKey("requiressl"))
 			{
 				if (args["requiressl"] == "true")
-					filters.Add(p => p.RequireSsl);
+					filters.Add(p => p.root.RequireSsl);
 				if (args["requiressl"] == "false")
-					filters.Add(p => !p.RequireSsl);
+					filters.Add(p => !p.root.RequireSsl);
 			}
 			
 			if (args.ContainsKey("nbversions"))
 			{
 				int nbVersions = int.Parse(args["nbversions"]);
-				filters.Add(p => p.GetPageData() != null && versionMgr.GetItemVersionHistory(p.GetPageData().Id).Count > nbVersions);
+				filters.Add(p => p.root.GetPageData() != null && versionMgr.GetItemVersionHistory(p.root.GetPageData().Id).Count > nbVersions);
 			}
 			
 			if (args.ContainsKey("cache"))
@@ -150,11 +160,11 @@ namespace SitefinitySupport.Shell
 				if (cacheName == "site") cacheName = "";
 
 				if (cacheName.EndsWith("*"))
-					filters.Add(p => p.GetPageData() != null &&
-									 p.GetPageData().OutputCacheProfile.ToLower().StartsWith(cacheName.TrimEnd('*')));
+					filters.Add(p => p.root.GetPageData() != null &&
+									 p.root.GetPageData().OutputCacheProfile.ToLower().StartsWith(cacheName.TrimEnd('*')));
 				else
-					filters.Add(p => p.GetPageData() != null &&
-									 p.GetPageData().OutputCacheProfile.ToLower() == cacheName);
+					filters.Add(p => p.root.GetPageData() != null &&
+									 p.root.GetPageData().OutputCacheProfile.ToLower() == cacheName);
 			}
 			
 			if (args.ContainsKey("template"))
@@ -162,30 +172,30 @@ namespace SitefinitySupport.Shell
 				string templateName = args["template"];
 
 				if (templateName.EndsWith("*"))
-					filters.Add(p => p.GetPageData() != null &&
-									 p.GetPageData().Template.Name.ToLower().StartsWith(templateName.TrimEnd('*')));
+					filters.Add(p => p.root.GetPageData() != null &&
+									 p.root.GetPageData().Template.Name.ToLower().StartsWith(templateName.TrimEnd('*')));
 				else
-					filters.Add(p => p.GetPageData() != null &&
-									 p.GetPageData().Template.Name.ToLower() == templateName);
+					filters.Add(p => p.root.GetPageData() != null &&
+									 p.root.GetPageData().Template.Name.ToLower() == templateName);
 			}
 
 			if (filters.Count == 0) return;
 
-			Func<PageNode, bool> filter = p => filters.All(predicate => predicate(p));
+			Func<PageTree, bool> filter = p => filters.All(predicate => predicate(p));
 			pages.Filter(filter);
 		}
 
 		public override void CMD_update(Arguments args)
 		{
-			Action<PageNode> action = null;
+			Action<PageTree> action = null;
 			VersionManager versionMgr = VersionManager.GetManager();
 			bool versionMgrSave = false;
 
 			if (args.ContainsKey("requiressl")) {
 				if (args["requiressl"] == "true")
-					action = p => p.RequireSsl = true;
+					action = p => p.root.RequireSsl = true;
 				else if (args["requiressl"] == "false")
-					action = p => p.RequireSsl = false;
+					action = p => p.root.RequireSsl = false;
 			}
 			else if (args.ContainsKey("nbversions"))
 			{
@@ -193,7 +203,7 @@ namespace SitefinitySupport.Shell
 				versionMgrSave = true;
 				action = p =>
 				{
-					PageData paged = p.GetPageData();
+					PageData paged = p.root.GetPageData();
 					if (paged == null) return;
 					var changes = versionMgr.GetItemVersionHistory(paged.Id);
 					var changeToRemove = changes
@@ -223,8 +233,8 @@ namespace SitefinitySupport.Shell
 
 				action = p =>
 				{
-					if (p.GetPageData() == null) return;
-					p.GetPageData().OutputCacheProfile = exactCacheName;
+					if (p.root.GetPageData() == null) return;
+					p.root.GetPageData().OutputCacheProfile = exactCacheName;
 				};
 
 			}
@@ -271,6 +281,94 @@ namespace SitefinitySupport.Shell
 			svc.Set_Error("Invalid path: " + args.FirstKey);
 		}
 
+		public string PermissionText(int actions, string label)
+		{
+			string result = "";
+
+			if ((actions & 1) != 0) result += "View ";
+			if ((actions & 2) != 0) result += "AddWidget ";
+			if ((actions & 4) != 0) result += "EditContent ";
+			if ((actions & 8) != 0) result += "CreateChildPages ";
+			if ((actions & 16) != 0) result += "ModifyProperties ";
+			if ((actions & 32) != 0) result += "Delete ";
+			if ((actions & 64) != 0) result += "ChangeOwner ";
+			if ((actions & 128) != 0) result += "ChangePermissions ";
+
+			if (result != "") return label + result;
+			return "";
+		}
+
+		public override void CMD_permissions(Arguments args)
+		{
+			RoleManager roleManager = RoleManager.GetManager(SecurityManager.ApplicationRolesProviderName);
+			UserManager userManager = UserManager.GetManager();
+
+			var roles = roleManager.GetRoles();
+			var users = userManager.GetUsers();
+			var permissionPages = pageMgr.GetPermissions().Where(p => p.SetName == "Pages");
+
+			Dictionary<string, int> permissionSig2Group = new Dictionary<string, int>();
+			Dictionary<int, IQueryable<Telerik.Sitefinity.Security.Model.Permission>> group2Permissions = new Dictionary<int, IQueryable<Telerik.Sitefinity.Security.Model.Permission>>();
+			int nbGroups = 1;
+
+			Action<PageTree> action = pt => {
+				// If the PageTree was filtered out, ignore it
+				if (!pt.filterIn) return;
+
+				// If the PageNode inherits permissions => Group #0
+				if (pt.root.InheritsPermissions)
+				{
+					pt.permissionGroup = 0;
+					return;
+				}
+
+
+				var permissions = permissionPages.Where(p => p.ObjectId == pt.root.Id && (p.Grant > 0 || p.Deny > 0))
+												 .OrderBy(p => p.PrincipalId);
+				
+				// Builds a signature unique to the permissions for that Page				 
+				string sig = string.Join("\n", permissions.Select(p => string.Format("{0}|{1}|{2}", p.PrincipalId, p.Grant, p.Deny)));
+
+				// Another page has the same permission signature. Reuse the group
+				if (permissionSig2Group.ContainsKey(sig)) {
+					pt.permissionGroup = permissionSig2Group[sig];
+					return;
+				}
+
+				// New group
+				permissionSig2Group.Add(sig, nbGroups);
+				group2Permissions.Add(nbGroups, permissions);
+				pt.permissionGroup = nbGroups++;
+			};
+
+			// Builds the group #
+			pages.Update(action);
+
+			// Prints everything
+			summary = pages.Print(new HashSet<string>() { "id", "permission" }).TrimEnd();
+			summary += "\n\n";
+
+			for (int groupNb=1; groupNb < nbGroups; groupNb++)
+			{
+				summary += string.Format("Permission Group #{0}\n", groupNb);
+				foreach (var permission in group2Permissions[groupNb])
+				{
+					string principalName = permission.PrincipalId.ToString();
+
+					var role = roles.Where(r => r.Id == permission.PrincipalId).FirstOrDefault();
+					if (role != null)
+						principalName = "[" + role.Name + "]";
+					else
+					{
+						var user = users.Where(u => u.Id == permission.PrincipalId).FirstOrDefault();
+						if (user != null) principalName = user.UserName;
+					}
+					summary += string.Format("- {0}: {1} {2}\n", principalName, PermissionText(permission.Grant, "GRANT "), PermissionText(permission.Deny, "DENY "));
+				}
+				summary += "\n";
+			}
+		}
+
 		public override string Serialize_Result()
 		{
 			if (summary != null) return summary;
@@ -287,7 +385,8 @@ namespace SitefinitySupport.Shell
 				"filter [requireSSL|nbversions|cache|template]=<value>: filters pages\n" +
 				"display [id] [requiSSL] [cache] [template]: sets the fields to display in the results\n" +
 				"cd <id>: goes the pages under <id>\n" +
-				"update [requireSSL|nbversions|cache|template]=<value>: modifies a field\n";
+				"update [requireSSL|nbversions|cache|template]=<value>: modifies a field\n" +
+				"permissions: shows the permissions sets for the pages\n";
 		}
 
 		public void CMD_help_end()
@@ -305,7 +404,7 @@ namespace SitefinitySupport.Shell
 		{
 			if (pages == null) return;
 
-			Action<PageNode> action = p => p.Title = p.Title + "";
+			Action<PageTree> action = p => p.root.Title = p.root.Title + "";
 			pages.Update(action);
 			pageMgr.SaveChanges();
 		}
@@ -314,13 +413,13 @@ namespace SitefinitySupport.Shell
 		{
 			if (pages == null) return;
 
-			Action<PageNode> action = p =>
+			Action<PageTree> action = p =>
 			{
-				if (p.NodeType == NodeType.Group || p.NodeType == NodeType.InnerRedirect || p.NodeType == NodeType.OuterRedirect)
-					p.Title = p.Title.Trim();
+				if (p.root.NodeType == NodeType.Group || p.root.NodeType == NodeType.InnerRedirect || p.root.NodeType == NodeType.OuterRedirect)
+					p.root.Title = p.root.Title.Trim();
 				else
 				{
-					var pageData = p.GetPageData();
+					var pageData = p.root.GetPageData();
 					if (pageData == null) return;
 
 					var pageEdit = pageMgr.PagesLifecycle.Edit(pageData);
@@ -345,7 +444,8 @@ namespace SitefinitySupport.Shell
 				"republish: republishes the pages\n" +
 				"\n" +
 				"Use a comma to chain multiple commands, e.g.\n" +
-				"list all, filter template=bootstrap* requiressl=false, update requireSSL=true\n";
+				"list all, filter template=bootstrap* requiressl=false, update requireSSL=true\n" +
+				"list all, permissions\n";
 
 			base.CMD_help_end();
 		}
