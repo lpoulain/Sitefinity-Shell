@@ -303,7 +303,15 @@ namespace SitefinitySupport.Shell
 				}
 				catch (Exception e)
 				{
-					Set_Error(e.Message);
+					Exception realerror = e;
+					string error = realerror.Message;
+
+					while (realerror.InnerException != null) {
+				        realerror = realerror.InnerException;
+						error += "\n" + realerror.Message;
+					}
+
+					Set_Error(error);
 					return output;
 				}
 			}
