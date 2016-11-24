@@ -43,6 +43,13 @@ namespace SitefinitySupport.Logs
 				string msgMatch = args["message"];
 				if (msgMatch != "") errors = errors.Where(e => e.message != null && e.message.Substring(10).ToLower().Contains(msgMatch)).ToList();
 			}
+
+			if (args.ContainsKey("stack"))
+			{
+				string msgMatch = args["stack"];
+				if (msgMatch != "") errors = errors.Where(e => e.stacktrace != null && e.stacktrace.Count >= 1 && e.stacktrace.First().Substring(12).ToLower().Contains(msgMatch)).ToList();
+			}
+
 		}
 
 		public void SetDisplayFields(HashSet<string> fields)
@@ -69,13 +76,23 @@ namespace SitefinitySupport.Logs
 			return results;
 		}
 
-		public static string Summary(string path, bool groupByUrl = false)
+		public static string Summary(string path, string groupBy)
 		{
 			string[] files = Directory.GetFiles(path, "Error*.log");
 
 			List<string> messages = new List<string>();
 
-			string filterPattern = groupByUrl ? "Requested URL : " : "Message : ";
+			string filterPattern = "Message : ";
+
+			switch(groupBy) {
+				case "url":
+					filterPattern = "Requested URL : ";
+					break;
+				case "stack":
+					filterPattern = "Stack Trace : ";
+					break;
+			}
+
 			int filterPadding = filterPattern.Length;
 
 			foreach (string file in files)

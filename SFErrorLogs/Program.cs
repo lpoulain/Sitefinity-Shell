@@ -32,7 +32,7 @@ namespace SitefinitySupport
 			if (argNb < nbArgs && args[argNb].ToLower() == "summary")
 			{
 				argNb++;
-				string output = ErrorLog.Summary(path, (nbArgs >= argNb + 1) && (args[argNb].ToLower() == "url"));
+				string output = ErrorLog.Summary(path, (nbArgs >= argNb + 1 ? args[argNb].ToLower() : ""));
 				Console.Out.WriteLine(output);
 				return;
 			}

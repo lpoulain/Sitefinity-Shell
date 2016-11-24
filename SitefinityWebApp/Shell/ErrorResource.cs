@@ -47,19 +47,19 @@ namespace SitefinitySupport.Shell
 		public override void CMD_summary(Arguments args)
 		{
 			string path = Path.Combine(HttpContext.Current.Request.PhysicalApplicationPath, "App_Data") + "\\Sitefinity\\Logs\\";
-			summary = ErrorLog.Summary(path, args.ContainsKey("url"));
+			summary = ErrorLog.Summary(path, args.FirstKey);
 		}
 
 		public override void CMD_help()
 		{
 			summary =
 				"list [all]: displays the errors from Error.log\n" +
-				"filter [message|url]=<substring>: filters the errors whose URL contains <substring>\n" +
-				"summary [url]: displays the most common errors messages (or URLs) found in all the Error log files\n" +
+				"filter [message|url|stack]=<substring>: filters the errors whose URL contains <substring>\n" +
+				"summary [url|stack]: displays the most common errors messages (or URLs) found in all the Error log files\n" +
 				"display [timestamp] [message] [url] [stack] [fullstack]: selects what error fields to display\n" +
 				"\n" +
 				"Use a comma to chain multiple commands, e.g.\n" +
-				"list all, filter message:empty guid, display timestamp fullstack\n";
+				"list all, filter message=empty guid, display timestamp fullstack\n";
 
 			base.CMD_help();
 		}
