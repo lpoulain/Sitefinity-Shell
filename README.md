@@ -13,6 +13,10 @@ Sitefinity Shell is a backend command-line tool to help improve some administrat
 - Determine what errors are the most common, or what URLs generate the most errors
 - Examine the SiteSync logs, including a full comparison between what the Source and the Destination site logs
 
+## Documentation
+
+Check [here](documentation.md)
+
 ## How to install
 
 Installing the Sitefinity Shell requires to do the following:
