@@ -4,7 +4,7 @@
 
 ![](sitefinity_shell.png)
 
-Sitefinity Shell is a backend command-line tool to help improve some administrative tasks like:
+Sitefinity Shell is a backend command-line tool for the [Sitefinity CMS](http://www.sitefinity.com) to help improve some administrative tasks like:
 
 - Find pages with certain characteristics - those with the Require SSL field, a certain template or cache setting
 - Modify some pages for a particular subtree: change the Require SSL flag, the cache settings, or trim older versions
