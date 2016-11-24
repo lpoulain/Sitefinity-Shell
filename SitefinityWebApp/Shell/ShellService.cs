@@ -228,75 +228,83 @@ namespace SitefinitySupport.Shell
 				command = command.Substring(firstWord.Length).TrimStart();
 				Arguments args = new Arguments(command);
 
-				// Executes the command
-				switch (firstWord)
+				try
 				{
-					case "l":
-					case "list":
-						rsc.CMD_list(args, rootId);
-						break;
-					case "filter":
-						rsc.CMD_filter(args);
-						break;
-					case "update":
-						rsc.CMD_update(args);
-						break;
-					case "cd":
-						rsc.CMD_cd(args, rootId);
-						break;
-					case "touch":
-						rsc.CMD_touch();
-						break;
-					case "bpages":
-						CMD_bpages();
-						break;
-					case "pages":
-						CMD_pages();
-						break;
-					case "errors":
-						CMD_errors();
-						break;
-					case "docs":
-					case "documents":
-						CMD_documents();
-						break;
-					case "images":
-						CMD_images();
-						break;
-					case "videos":
-						CMD_videos();
-						break;
-					case "sitesync":
-						CMD_sitesync();
-						break;
-					case "all":
-						CMD_all();
-						break;
-					case "site":
-						CMD_site(rsc, args);
-						return output;
-					case "summary":
-						rsc.CMD_summary(args);
-						break;
-					case "help":
-						rsc.CMD_help();
-						break;
-					case "display":
-						rsc.CMD_display(args);
-						break;
-					case "compare":
-						rsc.CMD_compare(args);
-						break;
-					case "republish":
-						rsc.CMD_republish(args);
-						break;
-					case "permissions":
-						rsc.CMD_permissions(args);
-						break;
-					default:
-						Set_Error("Invalid keyword: " + firstWord);
-						Set_Result(rsc);
-						return output;
+					// Executes the command
+					switch (firstWord)
+					{
+						case "l":
+						case "list":
+							rsc.CMD_list(args, rootId);
+							break;
+						case "filter":
+							rsc.CMD_filter(args);
+							break;
+						case "update":
+							rsc.CMD_update(args);
+							break;
+						case "cd":
+							rsc.CMD_cd(args, rootId);
+							break;
+						case "touch":
+							rsc.CMD_touch();
+							break;
+						case "bpages":
+							CMD_bpages();
+							break;
+						case "pages":
+							CMD_pages();
+							break;
+						case "errors":
+							CMD_errors();
+							break;
+						case "docs":
+						case "documents":
+							CMD_documents();
+							break;
+						case "images":
+							CMD_images();
+							break;
+						case "videos":
+							CMD_videos();
+							break;
+						case "sitesync":
+							CMD_sitesync();
+							break;
+						case "all":
+							CMD_all();
+							break;
+						case "site":
+							CMD_site(rsc, args);
+							return output;
+						case "summary":
+							rsc.CMD_summary(args);
+							break;
+						case "help":
+							rsc.CMD_help();
+							break;
+						case "display":
+							rsc.CMD_display(args);
+							break;
+						case "compare":
+							rsc.CMD_compare(args);
+							break;
+						case "republish":
+							rsc.CMD_republish(args);
+							break;
+						case "permissions":
+							rsc.CMD_permissions(args);
+							break;
+						default:
+							Set_Error("Invalid keyword: " + firstWord);
+							Set_Result(rsc);
+							return output;
+					}
+				}
+				catch (Exception e)
+				{
+					Set_Error(e.Message);
+					return output;
 				}
 			}
 

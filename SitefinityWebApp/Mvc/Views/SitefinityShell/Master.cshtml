@@ -38,6 +38,10 @@
 				$.ajax({
 					url: '../api/shellservice', data: { root: root, rsc: resource, cmd: line, site: site, provider:provider },
 					success: function (data) {
+						if (data.response == undefined && data.indexOf("Temporarily unavailable due to maintenance") >= 0) {
+							report([{ msg: "Site is being restarted", className: 'jquery-console-message-error' }]);
+							return;
+						}
 						if (data.response != '') list = data.response.split("\n");
 						if (data.path != '') controller.promptLabel = data.path;
 						if (data.root != '') root = data.root;
