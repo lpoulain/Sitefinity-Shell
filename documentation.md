@@ -51,3 +51,9 @@ Like for pages, `display` allows to display only the desired fields: timestamp, 
 `compare` compares the Synchronization logs from both Source and Destination servers, displaying errors and any discrepancy. This command needs to be run on the Source server, and will automatically read the credentials to talk to the Destination server(s) from the SiteSync configuration. The Destination server(s) need to be up and running and have the Sitefinity Shell installed for `compare` to work.
 
 Both commands contains a `detail` argument which displays more details about any error found.
+
+# All
+
+`all` switches to the All section, which allows to republish all the content of a given site: pages, pages templates, news items, blogs and blog posts, calendars and events, libraries, documents, images, videos, lists and list items, forms, shared content blocks, taxonomies, dynamic content.
+
+Type `list` to list all the sites, and `republish <site ID>` to republish all the content available for a given site.
