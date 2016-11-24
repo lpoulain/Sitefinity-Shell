@@ -79,7 +79,7 @@ namespace SitefinitySupport.Shell
 					if (display.Contains("cache")) result += " - " + (pdata.OutputCacheProfile == "" ? "site" : pdata.OutputCacheProfile);
 				}
 
-				if (display.Contains("permission"))
+				if (display.Contains("permissions"))
 				{
 					if (permissionGroup == 0) result += " - Inherits permissions";
 					else result += " - Permission group #" + permissionGroup.ToString();
@@ -101,6 +101,7 @@ namespace SitefinitySupport.Shell
 	{
 		protected PageManager pageMgr;
 		protected PageTree pages;
+		Dictionary<int, IQueryable<Telerik.Sitefinity.Security.Model.Permission>> group2Permissions;
 
 		public PageResource(IShellService theSvc, string name)
 			: base(theSvc, name)
@@ -298,17 +299,12 @@ namespace SitefinitySupport.Shell
 			return "";
 		}
 
-		public override void CMD_permissions(Arguments args)
+		public void FindPermissions()
 		{
-			RoleManager roleManager = RoleManager.GetManager(SecurityManager.ApplicationRolesProviderName);
-			UserManager userManager = UserManager.GetManager();
-
-			var roles = roleManager.GetRoles();
-			var users = userManager.GetUsers();
 			var permissionPages = pageMgr.GetPermissions().Where(p => p.SetName == "Pages");
 
 			Dictionary<string, int> permissionSig2Group = new Dictionary<string, int>();
-			Dictionary<int, IQueryable<Telerik.Sitefinity.Security.Model.Permission>> group2Permissions = new Dictionary<int, IQueryable<Telerik.Sitefinity.Security.Model.Permission>>();
+			group2Permissions = new Dictionary<int, IQueryable<Telerik.Sitefinity.Security.Model.Permission>>();
 			int nbGroups = 1;
 
 			Action<PageTree> action = pt => {
@@ -341,12 +337,20 @@ namespace SitefinitySupport.Shell
 				pt.permissionGroup = nbGroups++;
 			};
 
-			// Builds the group #
+			// Sets the Permission Group # in the PageTree objects
 			pages.Update(action);
+		}
 
-			// Prints everything
-			summary = pages.Print(new HashSet<string>() { "id", "permission" }).TrimEnd();
-			summary += "\n\n";
+		public string PrintPermissionGroups()
+		{
+			RoleManager roleManager = RoleManager.GetManager(SecurityManager.ApplicationRolesProviderName);
+			UserManager userManager = UserManager.GetManager();
+
+			var roles = roleManager.GetRoles();
+			var users = userManager.GetUsers();
+
+			string summary = "\n\n";
+			int nbGroups = group2Permissions.Count() + 1;
 
 			for (int groupNb=1; groupNb < nbGroups; groupNb++)
 			{
@@ -367,6 +371,8 @@ namespace SitefinitySupport.Shell
 				}
 				summary += "\n";
 			}
+
+			return summary;
 		}
 
 		public override string Serialize_Result()
@@ -374,7 +380,15 @@ namespace SitefinitySupport.Shell
 			if (summary != null) return summary;
 
 			if (pages == null) return "";
-			return pages.Print(display).TrimEnd();
+
+			if (!display.Contains("permissions"))
+				return pages.Print(display).TrimEnd();
+
+			FindPermissions();
+			summary = pages.Print(display).TrimEnd();
+			summary += PrintPermissionGroups();
+
+			return summary;
 		}
 
 		public override void CMD_help()
@@ -383,10 +397,9 @@ namespace SitefinitySupport.Shell
 				"list: displays the pages in the current folder\n" +
 				"list all: displays the pages and their subpages\n" +
 				"filter [requireSSL|nbversions|cache|template]=<value>: filters pages\n" +
-				"display [id] [requiSSL] [cache] [template]: sets the fields to display in the results\n" +
+				"display [id] [requiSSL] [cache] [template] [permissons]: sets the fields to display in the results\n" +
 				"cd <id>: goes the pages under <id>\n" +
-				"update [requireSSL|nbversions|cache|template]=<value>: modifies a field\n" +
-				"permissions: shows the permissions sets for the pages\n";
+				"update [requireSSL|nbversions|cache|template]=<value>: modifies a field\n";
 		}
 
 		public void CMD_help_end()

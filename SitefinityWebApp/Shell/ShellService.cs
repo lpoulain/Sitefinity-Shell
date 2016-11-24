@@ -292,9 +292,6 @@ namespace SitefinitySupport.Shell
 						case "republish":
 							rsc.CMD_republish(args);
 							break;
-						case "permissions":
-							rsc.CMD_permissions(args);
-							break;
 						default:
 							Set_Error("Invalid keyword: " + firstWord);
 							Set_Result(rsc);
