@@ -180,9 +180,9 @@ namespace SitefinitySupport.Shell
 									 p.root.GetPageData().Template.Name.ToLower() == templateName);
 			}
 
-			if (args.ContainsKey("inheritspermissions"))
+			if (args.ContainsKey("permissionsinheritance"))
 			{
-				string val = args["inheritspermissions"];
+				string val = args["permissionsinheritance"];
 				if (val == "true")
 					filters.Add(p => p.root.InheritsPermissions);
 				else
@@ -248,9 +248,9 @@ namespace SitefinitySupport.Shell
 				};
 
 			}
-			else if (args.ContainsKey("inheritspermissions"))
+			else if (args.ContainsKey("permissionsinheritance"))
 			{
-				string val = args["inheritspermissions"];
+				string val = args["permissionsinheritance"];
 				if (val == "true")
 					action = p => pageMgr.RestorePermissionsInheritance(p.root);
 				if (val == "false")
@@ -413,10 +413,10 @@ namespace SitefinitySupport.Shell
 			summary =
 				"list: displays the pages in the current folder\n" +
 				"list all: displays the pages and their subpages\n" +
-				"filter [requireSSL|nbversions|cache|template]=<value>: filters pages\n" +
+				"filter [requireSSL|nbversions|cache|template|permissionsinheritance]=<value>: filters pages\n" +
 				"display [id] [requiSSL] [cache] [template] [permissons]: sets the fields to display in the results\n" +
 				"cd <id>: goes the pages under <id>\n" +
-				"update [requireSSL|nbversions|cache|template]=<value>: modifies a field\n";
+				"update [requireSSL|nbversions|cache|template|permissionsinheritance]=<value>: modifies a field\n";
 		}
 
 		public void CMD_help_end()
