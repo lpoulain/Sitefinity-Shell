@@ -180,6 +180,15 @@ namespace SitefinitySupport.Shell
 									 p.root.GetPageData().Template.Name.ToLower() == templateName);
 			}
 
+			if (args.ContainsKey("inheritspermissions"))
+			{
+				string val = args["inheritspermissions"];
+				if (val == "true")
+					filters.Add(p => p.root.InheritsPermissions);
+				else
+					filters.Add(p => !p.root.InheritsPermissions);
+			}
+
 			if (filters.Count == 0) return;
 
 			Func<PageTree, bool> filter = p => filters.All(predicate => predicate(p));
@@ -238,6 +247,14 @@ namespace SitefinitySupport.Shell
 					p.root.GetPageData().OutputCacheProfile = exactCacheName;
 				};
 
+			}
+			else if (args.ContainsKey("inheritspermissions"))
+			{
+				string val = args["inheritspermissions"];
+				if (val == "true")
+					action = p => pageMgr.RestorePermissionsInheritance(p.root);
+				if (val == "false")
+					action = p => pageMgr.BreakPermiossionsInheritance(p.root);
 			}
 
 			if (action != null)
