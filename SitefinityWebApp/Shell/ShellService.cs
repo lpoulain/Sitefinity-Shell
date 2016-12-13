@@ -14,7 +14,9 @@ namespace SitefinitySupport.Shell
 		void Set_Result(Resource rsc);
 		void Set_Error(string error);
 		void Set_Root(Guid root);
+		Guid Get_Root();
 		void Set_Path(string path);
+		string Get_Path();
 		void Set_Resource(string rsc);
 		void CMD_pages();
 		void CMD_bpages();
@@ -122,6 +124,14 @@ namespace SitefinitySupport.Shell
 			Set_Provider("");
 		}
 
+		public void CMD_dynmodules()
+		{
+			Set_Root(Guid.Empty);
+			Set_Path("Dynamic Modules");
+			Set_Resource("dynmod");
+			Set_Provider("OpenAccessProvider");
+		}
+
 		public void CMD_all()
 		{
 			Set_Root(Guid.Empty);
@@ -163,7 +173,9 @@ namespace SitefinitySupport.Shell
 		public void Set_Result(Resource rsc) { output.response = rsc.Serialize_Result(); }
 		public void Set_Error(string error) { output.error = error; }
 		public void Set_Root(Guid root) { output.root = root.ToString(); }
+		public Guid Get_Root() { return new Guid(output.root); }
 		public void Set_Path(string path) { output.path = path + "> "; }
+		public string Get_Path() { return output.path; }
 		public void Set_Resource(string rsc) { output.resource = rsc; }
 		public void Set_Site(Guid siteId) { output.site = siteId.ToString(); }
 		public Site Get_Site() {
@@ -186,6 +198,7 @@ namespace SitefinitySupport.Shell
 			{
 				rootId = SiteInitializer.CurrentFrontendRootNodeId;
 			}
+			Set_Root(rootId);
 
 			// Finds the right resource object
 			Resource rsc;
@@ -208,6 +221,9 @@ namespace SitefinitySupport.Shell
 					break;
 				case "sitesync":
 					rsc = new SiteSyncResource(this) as Resource;
+					break;
+				case "dynmod":
+					rsc = new DynamicModuleResource(this) as Resource;
 					break;
 				case "all":
 					rsc = new AllResource(this) as Resource;
@@ -249,6 +265,9 @@ namespace SitefinitySupport.Shell
 						case "touch":
 							rsc.CMD_touch();
 							break;
+						case "provider":
+							rsc.CMD_provider(args, rootId);
+							break;
 						case "bpages":
 							CMD_bpages();
 							break;
@@ -270,6 +289,9 @@ namespace SitefinitySupport.Shell
 							break;
 						case "sitesync":
 							CMD_sitesync();
+							break;
+						case "dynmod":
+							CMD_dynmodules();
 							break;
 						case "all":
 							CMD_all();

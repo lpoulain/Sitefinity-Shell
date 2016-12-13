@@ -7,17 +7,20 @@ using Telerik.Sitefinity.Libraries.Model;
 using Telerik.Sitefinity.Modules.Libraries;
 using Telerik.Sitefinity.Multisite;
 using Telerik.Sitefinity.Multisite.Model;
+using Telerik.Sitefinity.Security;
+using Telerik.Sitefinity.Security.Model;
 
 namespace SitefinitySupport.Shell
 {
 	public class MediaTree
 	{
 		public IFolder root;
-		bool filterIn;
+		public bool filterIn;
 		public List<MediaContent> items;
 		public List<MediaTree> folders;
-		protected LibrariesManager libMgr;
+		public LibrariesManager libMgr;
 		public Dictionary<string, string> providers;
+		public Dictionary<Guid, int> permissionGroup;
 
 		// Looking inside a folder
 		public MediaTree(IFolder folder, int level, LibrariesManager libMgr)
@@ -111,6 +114,14 @@ namespace SitefinitySupport.Shell
 				else itemName = "[" + folder.root.Title + "]";
 
 				result += itemName;
+
+				if (folder.permissionGroup != null && folder.permissionGroup.ContainsKey(folder.root.Id))
+				{
+					int group = folder.permissionGroup[folder.root.Id];
+					if (group == 0) result += " - Inherits permissions";
+					else result += " - Permission group #" + group.ToString();
+				}
+
 				result += "\n";
 
 				result += folder.Print(level + 1);
@@ -122,6 +133,14 @@ namespace SitefinitySupport.Shell
 				string itemName = item.Title;
 //				if (!filterIn) itemName = "(" + string.Join(" ", itemName.Select<Char, String>(c => c.ToString())) + ")";
 				result += itemName;
+
+				if (permissionGroup != null && permissionGroup.ContainsKey(item.Id))
+				{
+					int group = permissionGroup[item.Id];
+					if (group == 0) result += " - Inherits permissions";
+					else result += " - Permission group #" + group.ToString();
+				}
+
 				result += "\n";
 			}
 
@@ -279,12 +298,149 @@ namespace SitefinitySupport.Shell
 			libMgr.SaveChanges();
 		}
 
+		public void FindPermissions()
+		{
+			Dictionary<string, int> permissionSig2Group = new Dictionary<string, int>();
+			group2Permissions = new Dictionary<int, IQueryable<Telerik.Sitefinity.Security.Model.Permission>>();
+			int nbGroups = 1;
+
+			Action<MediaTree> action = mt =>
+			{
+				// If the MediaTree was filtered out, ignore it
+				if (!mt.filterIn) return;
+
+				mt.permissionGroup = new Dictionary<Guid, int>();
+				List<ISecuredObject> allitems = new List<ISecuredObject>();
+				allitems.AddRange(mt.items);
+				if (mt.root is Library) allitems.Add(mt.root as Library);
+
+				IQueryable<Telerik.Sitefinity.Security.Model.Permission> mediaPermissions = mt.libMgr.GetPermissions();
+
+				foreach (ISecuredObject item in allitems)
+				{
+					// If the item inherits permissions => Group #0
+					if (item.InheritsPermissions)
+					{
+						mt.permissionGroup.Add(item.Id, 0);
+						continue;
+					}
+
+					var permissions = mediaPermissions.Where(p => p.ObjectId == item.Id && (p.Grant > 0 || p.Deny > 0))
+													 .OrderBy(p => p.PrincipalId);
+
+					// Builds a signature unique to the permissions for that Page				 
+					string sig = string.Join("\n", permissions.Select(p => string.Format("{0}|{1}|{2}", p.PrincipalId, p.Grant, p.Deny)));
+
+					// Another page has the same permission signature. Reuse the group
+					if (permissionSig2Group.ContainsKey(sig))
+					{
+						mt.permissionGroup.Add(item.Id, permissionSig2Group[sig]);
+						continue;
+					}
+
+					// New group
+					permissionSig2Group.Add(sig, nbGroups);
+					group2Permissions.Add(nbGroups, permissions);
+					mt.permissionGroup.Add(item.Id, nbGroups++);
+				}
+
+			};
+
+			// Sets the Permission Group # in the PageTree objects
+			root.Update(action);
+		}
+
+		public override string PermissionText(int actions, string label)
+		{
+			string result = "";
+
+			if ((actions & 1) != 0) result += "View" + label + " ";
+			if ((actions & 2) != 0) result += "Modify" + label + " ";
+			if ((actions & 4) != 0) result += "ChangeOwner" + label + " ";
+			if ((actions & 8) != 0) result += "ChangePermissions" + label + " ";
+
+			return result;
+		}
+
+		public string GetPrincipalName(Guid principalId, IQueryable<Role> roles, IQueryable<User> users)
+		{
+			string principalName = principalId.ToString();
+
+			var role = roles.Where(r => r.Id == principalId).FirstOrDefault();
+			if (role != null)
+				principalName = "[" + role.Name + "]";
+			else
+			{
+				var user = users.Where(u => u.Id == principalId).FirstOrDefault();
+				if (user != null) principalName = user.UserName;
+			}
+
+			return principalName;
+		}
+
+		public string PrintPermissionGroups()
+		{
+			RoleManager roleManager = RoleManager.GetManager(SecurityManager.ApplicationRolesProviderName);
+			UserManager userManager = UserManager.GetManager();
+
+			var roles = roleManager.GetRoles();
+			var users = userManager.GetUsers();
+
+			string summary = "\n\n";
+			int nbGroups = group2Permissions.Count() + 1;
+
+			for (int groupNb=1; groupNb < nbGroups; groupNb++)
+			{
+				summary += string.Format("Permission Group #{0}\n", groupNb);
+				string grant = "", deny = "";
+				Guid principalId = Guid.Empty;
+
+				foreach (var permission in group2Permissions[groupNb])
+				{
+					if (principalId != permission.PrincipalId)
+					{
+						if (principalId != Guid.Empty)
+						{
+							if (grant != "") grant = "GRANT " + grant;
+							if (deny != "") grant = "DENY " + grant;
+							summary += string.Format("- {0}: {1} {2}\n", GetPrincipalName(principalId, roles, users), grant, deny);
+
+							grant = "";
+							deny = "";
+						}
+						principalId = permission.PrincipalId;
+					}
+					
+					string rsc = permission.SetName.Contains("Library") ? "Library" : "Media";
+					grant += PermissionText(permission.Grant, rsc);
+				}
+
+				if (principalId != Guid.Empty)
+				{
+					if (grant != "") grant = "GRANT " + grant;
+					if (deny != "") grant = "DENY " + grant;
+					summary += string.Format("- {0}: {1} {2}\n", GetPrincipalName(principalId, roles, users), grant, deny);
+				}
+
+				summary += "\n";
+			}
+
+			return summary;
+		}
+
 		public override string Serialize_Result()
 		{
 			if (summary != null) return summary;
 			if (root == null) return "";
 
-			return root.Print();
+//			if (!display.Contains("permissions"))
+//				return root.Print();
+
+			FindPermissions();
+			summary = root.Print().TrimEnd();
+			summary += PrintPermissionGroups();
+
+			return summary;
 		}
 	}
 
@@ -303,7 +459,6 @@ namespace SitefinitySupport.Shell
 		{
 			return libMgr.GetDocumentLibraries();
 		}
-
 	}
 
 	public class ImageResource : MediaResource
@@ -321,7 +476,6 @@ namespace SitefinitySupport.Shell
 		{
 			return libMgr.GetAlbums();
 		}
-
 	}
 
 	public class VideoResource : MediaResource

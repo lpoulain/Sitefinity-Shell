@@ -101,7 +101,6 @@ namespace SitefinitySupport.Shell
 	{
 		protected PageManager pageMgr;
 		protected PageTree pages;
-		Dictionary<int, IQueryable<Telerik.Sitefinity.Security.Model.Permission>> group2Permissions;
 
 		public PageResource(IShellService theSvc, string name)
 			: base(theSvc, name)
@@ -299,7 +298,7 @@ namespace SitefinitySupport.Shell
 			svc.Set_Error("Invalid path: " + args.FirstKey);
 		}
 
-		public string PermissionText(int actions, string label)
+		public override string PermissionText(int actions, string label)
 		{
 			string result = "";
 
