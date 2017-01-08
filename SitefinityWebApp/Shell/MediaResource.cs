@@ -39,16 +39,17 @@ namespace SitefinitySupport.Shell
 			{
 				items = libMgr.GetChildItems(root).Where(i => i.Status == Telerik.Sitefinity.GenericContent.Model.ContentLifecycleStatus.Live &&
 															  i.Parent.Id == root.Id &&
-															  i.FolderId == null).ToList();
+															  i.FolderId == null &&
+															  i.Visible).ToList();
 				folders = libMgr.GetChildFolders(root).Where(f => f.ParentId == null).Select<IFolder, MediaTree>(f => new MediaTree(f, level-1, libMgr)).ToList();
 			}
 			else
 			{
 				items = libMgr.GetChildItems(root).Where(i => i.Status == Telerik.Sitefinity.GenericContent.Model.ContentLifecycleStatus.Live &&
-															  i.FolderId == root.Id).ToList();
+															  i.FolderId == root.Id &&
+															  i.Visible).ToList();
 				folders = libMgr.GetChildFolders(root).Where(f => f.ParentId == root.Id).Select<IFolder, MediaTree>(f => new MediaTree(f, level - 1, libMgr)).ToList();
 			}
-			items = items.Where(i => !i.IsDeleted).ToList();
 		}
 
 		// Top-level: go through all the Libraries for all the providers
@@ -432,9 +433,6 @@ namespace SitefinitySupport.Shell
 		{
 			if (summary != null) return summary;
 			if (root == null) return "";
-
-//			if (!display.Contains("permissions"))
-//				return root.Print();
 
 			FindPermissions();
 			summary = root.Print().TrimEnd();
