@@ -67,56 +67,155 @@ namespace SitefinitySupport.Shell
 
 		public override void CMD_republish(Arguments args)
 		{
-			ModuleBuilderManager dynMgr = ModuleBuilderManager.GetManager(); ;
-			var modules = dynMgr.GetItems(typeof(Telerik.Sitefinity.DynamicModules.Builder.Model.DynamicModule), "", "", 0, 0).Cast<Telerik.Sitefinity.DynamicModules.Builder.Model.DynamicModule>();
+			if (args.Count < 2)
+			{
+				CMD_help();
+				return;
+			}
 
 			MultisiteManager siteMgr = MultisiteManager.GetManager();
-			site = siteMgr.GetSite(new Guid(args.FirstKey));
+			Guid siteId = Guid.Empty;
+			string contentType = "";
 
-			var links = site.SiteDataSourceLinks.Where(s => s.DataSourceName == "Telerik.Sitefinity.Modules.Libraries.LibrariesManager");
+			foreach (string arg in args.Keys)
+			{
+				try
+				{
+					siteId = new Guid(arg);
+				}
+				catch (Exception)
+				{
+					contentType = arg;
+				}
+			}
 
-			// Page Templates
-			this.RepublishPageTemplatess();
+			if (siteId == Guid.Empty)
+			{
+				svc.Set_Error("Invalid Site ID");
+				CMD_help();
+				return;
+			}
 
+			try
+			{
+				site = siteMgr.GetSite(siteId);
+			}
+			catch (Exception)
+			{
+				svc.Set_Error("Invalid Site ID: " + siteId.ToString());
+				return;
+			}
+
+			switch(contentType)
+			{
+				case "templates":
+					RepublishPageTemplates();
+					return;
+				case "pages":
+					RepublishPages();
+					return;
+				case "news":
+					RepublishNewsItems();
+					return;
+				case "blogs":
+					RepublishBlogPosts();
+					return;
+				case "events":
+					RepublishEvents();
+					return;
+				case "media":
+					RepublishMedia();
+					return;
+				case "lists":
+					RepublishLists();
+					return;
+				case "forms":
+					RepublishForms();
+					return;
+				case "contentblocks":
+					RepublishContentBlocks();
+					return;
+				case "taxa":
+					RepublishTaxonomies();
+					return;
+				case "dynamic":
+					RepublishDynamicContent();
+					return;
+				case "all":
+					RepublishPageTemplates();
+					RepublishPages();
+					RepublishNewsItems();
+					RepublishBlogPosts();
+					RepublishEvents();
+					RepublishMedia();
+					RepublishLists();
+					RepublishForms();
+					RepublishContentBlocks();
+					RepublishTaxonomies();
+					RepublishDynamicContent();
+					return;
+			}
+
+			svc.Set_Error("Please set a content type to republish");
+			CMD_help();
+		}
+
+		private void RepublishPages() {
 			// Pages
 			var currentFrontendRootNodeId = site.SiteMapRootNodeId;
 			this.RepublishPages(currentFrontendRootNodeId);
 			this.RepublishGroupPagesForSite(currentFrontendRootNodeId);
+		}
 
+		private void RepublishNewsItems() {
 			// News items
 			var newsItemsproviders = GetProviders(NewsManagerTypeName);
 			this.RepublishNewsItems(newsItemsproviders);
+		}
 
+		private void RepublishBlogPosts() {
 			// Blogs and Blog posts
 			var blogsProviders = GetProviders(BlogsManagerTypeName);
 			this.RepublishBlogs(blogsProviders);
 			this.RepublishBlogPosts(blogsProviders);
+		}
 
+		private void RepublishEvents() {
 			// Calendars and Events
 			var eventsProviders = GetProviders(EventsManagerTypeName);
 			this.RepublishCalendars(eventsProviders);
 			this.RepublishEvents(eventsProviders);
+		}
 
+		private void RepublishMedia() {
 			// Libraries, Folders, Images, Documents, Videos
 			var librariesProviders = GetProviders(LibrariesManagerTypeName);
 			this.RepublishLibrariesAndFolders(librariesProviders);
 			this.RepublishImages(librariesProviders);
 			this.RepublishDocuments(librariesProviders);
 			this.RepublishVideos(librariesProviders);
+		}
 
+		private void RepublishLists() {
 			// Lists and ListItems
 			var listsProviders = GetProviders(ListsManagerTypeName);
 			this.RepublishLists(listsProviders);
 			this.RepublishListItems(listsProviders);
+		}
 
+		private void RepublishForms() {
 			// Forms
 			var formsProviders = GetProviders(FormsManagerTypeName);
 			this.RepublishForms(formsProviders);
+		}
 
+		private void RepublishContentBlocks() {
 			// Content Blocks
 			var contentProviders = GetProviders(ContentManagerTypeName);
 			this.RepublishContentBlocks(contentProviders);
+		}
 
+		private void RepublishTaxonomies() {
 			// Taxonomies
 			foreach (var flatTaxonomyName in FlatTaxonomyNames)
 			{
@@ -129,7 +228,9 @@ namespace SitefinitySupport.Shell
 				this.RepublishTaxonomies(hierarchicalTaxonomyName, false);
 				this.RepublishTaxonItems(hierarchicalTaxonomyName, false);
 			}
+		}
 
+		private void RepublishDynamicContent() {
 			var multisiteContext = SystemManager.CurrentContext as MultisiteContext;
 			var theSite = multisiteContext.GetSiteById(site.Id);
 
@@ -149,7 +250,7 @@ namespace SitefinitySupport.Shell
 		{
 			summary =
 				"list: displays the sites\n" +
-				"republish <site ID>: republish all items for that site\n";
+				"republish <site ID> all|pages|templates|news|blogs|events|media|lists|forms|contentblocks|taxa|dynamic: republish all items for that site\n";
 
 			base.CMD_help();
 		}
@@ -187,7 +288,7 @@ namespace SitefinitySupport.Shell
 			pageManager.Provider.SuppressSecurityChecks = false;
 		}
 
-		private void RepublishPageTemplatess()
+		private void RepublishPageTemplates()
 		{
 			var pageManager = PageManager.GetManager();
 			pageManager.Provider.SuppressSecurityChecks = true;
