@@ -56,4 +56,4 @@ Both commands contains a `detail` argument which displays more details about any
 
 `all` switches to the All section, which allows to republish all the content of a given site: pages, pages templates, news items, blogs and blog posts, calendars and events, libraries, documents, images, videos, lists and list items, forms, shared content blocks, taxonomies, dynamic content.
 
-Type `list` to list all the sites, and `republish <site ID>` to republish all the content available for a given site.
+Type `list` to list all the sites, and `republish <site ID> <content type>` to republish all the content available for a given site. The content type can either be 'all' (to republish everything) or one of the content types supported (see help for a list)
