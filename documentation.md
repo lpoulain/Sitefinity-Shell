@@ -30,7 +30,7 @@ The `display` command sets the fields being displayed: id, requireSSL, cache, te
 
 `docs`, `images` and `videos` switch to respectively the Documents, Images and Videos section.
 
-The `list`, `cd` and `republish` works the same way as for pages.
+The `list`, `cd` and `republish` commands work the same way as for pages. `update nbversions=<nb>`, like for pages, removes older versions for media content which have more than <nb> versions.
 
 ## Errors
 

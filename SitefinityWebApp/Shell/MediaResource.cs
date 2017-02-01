@@ -9,6 +9,7 @@ using Telerik.Sitefinity.Multisite;
 using Telerik.Sitefinity.Multisite.Model;
 using Telerik.Sitefinity.Security;
 using Telerik.Sitefinity.Security.Model;
+using Telerik.Sitefinity.Versioning;
 
 namespace SitefinitySupport.Shell
 {
@@ -171,7 +172,8 @@ namespace SitefinitySupport.Shell
 			summary =
 				"cd <id>: go the the Library/Folder\n" +
 				"list: lists all the folders and media content in the current folder\n" +
-				"republish: republishes the documents/images/videos\n";
+				"republish: republishes the documents/images/videos\n" +
+				"update nbversions=<nb>: deletes older revisions beyond <nb>\n";
 
 			base.CMD_help();
 		}
@@ -297,6 +299,43 @@ namespace SitefinitySupport.Shell
 
 			root.Update(action);
 			libMgr.SaveChanges();
+		}
+
+		public override void CMD_update(Arguments args)
+		{
+			VersionManager versionMgr = VersionManager.GetManager();
+			bool versionMgrSave = false;
+			Action<MediaTree> action = null;
+
+			if (args.ContainsKey("nbversions"))
+			{
+				int nbVersions = int.Parse(args["nbversions"]);
+				versionMgrSave = true;
+				action = t =>
+				{
+					foreach (MediaContent item in t.items)
+					{
+						var changes = versionMgr.GetItemVersionHistory(item.OriginalContentId);
+						var changeToRemove = changes
+							.OrderByDescending(c => c.Version)
+							.Skip(nbVersions)
+							.FirstOrDefault();
+
+						if (changeToRemove != null)
+						{
+							// Delete all changes with version number smaller or equal to the specified number
+							versionMgr.TruncateVersions(item.OriginalContentId, changeToRemove.Version);
+						}
+					}
+				};
+			}
+
+			if (action != null)
+			{
+				root.Update(action);
+				libMgr.SaveChanges();
+				if (versionMgrSave) versionMgr.SaveChanges();
+			}
 		}
 
 		public void FindPermissions()
