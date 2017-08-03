@@ -19,16 +19,8 @@ Check [here](documentation.md)
 
 ## How to install
 
-Installing the Sitefinity Shell requires to do the following:
+Just copy the files from the bin folder to Sitefinity's bin folder. Sitefinity will automatically add a "Shell" page in the Administration menu.
 
-- Build the SitefinityLogs project, which will generate `SitefinityLogs.dll`
-- Copy the files inside `SitefinityWebApp` to your Sitefinity project
-- Add a dependency to `SitefinityLogs.dll` to your Sitefinity project
-- Rebuild
-- Add the "Sitefinity Shell" widget to any backend page
-
-I am working on a better way to integrate the Shell to a Sitefinity project, but that may take some time.
-
-## Command-Line Tools
-
-Two parts of the Sitefinity Shell are available as Windows command-line tools: `SFErrorLogs.exe` and `SFSiteSyncLogs.exe` (both requiring SitefinityLogs.dll). Those utilities have the same functionalities as the `errors` and `sitesync` features: examining the error logs and the SiteSync logs.
+To uninstall:
+- Delete the SitefinityShell.* files
+- Go to Administration / Backend Pages to delete the Shell page
