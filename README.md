@@ -21,6 +21,11 @@ Check [here](documentation.md)
 
 Just copy the files from the bin folder to Sitefinity's bin folder. Sitefinity will automatically add a "Shell" page in the Administration menu.
 
+To rebuild for another Sitefinity version:
+- Copy the SitefinityShell folder to Sitefinity's "Projects" folder. It should be on the same level as the _EmptyProject folder.
+- Open SitefinityShell/SitefinityShell.csproj in Visual Studio
+- Rebuild the project
+
 To uninstall:
 - Delete the SitefinityShell.* files
 - Go to Administration / Backend Pages to delete the Shell page
