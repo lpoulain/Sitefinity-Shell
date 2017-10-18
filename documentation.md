@@ -52,6 +52,10 @@ Like for pages, `display` allows to display only the desired fields: timestamp, 
 
 Both commands contains a `detail` argument which displays more details about any error found.
 
+## Audit Trail
+
+`audit` switches to the Audit Trail section, allowing to see and filter audit events using the `list`, `filter` and `display` commands.
+
 # All
 
 `all` switches to the All section, which allows to republish all the content of a given site: pages, pages templates, news items, blogs and blog posts, calendars and events, libraries, documents, images, videos, lists and list items, forms, shared content blocks, taxonomies, dynamic content.

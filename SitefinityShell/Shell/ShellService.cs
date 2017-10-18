@@ -133,6 +133,14 @@ namespace SitefinitySupport.Shell
 			Set_Provider("OpenAccessProvider");
 		}
 
+		public void CMD_audittrail()
+		{
+			Set_Root(Guid.Empty);
+			Set_Path("Audit Trail");
+			Set_Resource("audit");
+			Set_Provider("");
+		}
+
 		public void CMD_all()
 		{
 			Set_Root(Guid.Empty);
@@ -209,6 +217,9 @@ namespace SitefinitySupport.Shell
 				case "errors":
 					rsc = new ErrorResource(this) as Resource;
 					break;
+				case "audit":
+					rsc = new AuditResource(this) as Resource;
+					break;
 				case "bpages":
 					rsc = new BackendPageResource(this) as Resource;
 					break;
@@ -278,6 +289,9 @@ namespace SitefinitySupport.Shell
 							break;
 						case "errors":
 							CMD_errors();
+							break;
+						case "audit":
+							CMD_audittrail();
 							break;
 						case "docs":
 						case "documents":
