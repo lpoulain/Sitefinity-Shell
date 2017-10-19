@@ -284,6 +284,9 @@ namespace SitefinitySupport.Shell
 						case "bpages":
 							CMD_bpages();
 							break;
+						case "call":
+							rsc.CMD_call(args);
+							break;
 						case "pages":
 							CMD_pages();
 							break;

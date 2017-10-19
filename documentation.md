@@ -50,6 +50,12 @@ Like for pages, `display` allows to display only the desired fields: timestamp, 
 
 `compare` compares the Synchronization logs from both Source and Destination servers, displaying errors and any discrepancy. This command needs to be run on the Source server, and will automatically read the credentials to talk to the Destination server(s) from the SiteSync configuration. The Destination server(s) need to be up and running and have the Sitefinity Shell installed for `compare` to work.
 
+`call` has Sitefinity contact a URL and detect any potential issue (invalid hostname, invalid SSL certificate, redirection, TLS version not supported, etc)
+
+- `call http://www.google.com`: tests whether Sitefinity can successfully call http://www.google.com
+- `call target`: tests whether Sitefinity can successfully call all the SiteSync Servers defined in Administration / Settings / SiteSync
+- `call nlb`: tests whether Sitefinity can successfully call all the Load Balancing nodes defined in Adminstration / Settings / Advanced / System / LoadBalancing / WebServerUrls
+
 Both commands contains a `detail` argument which displays more details about any error found.
 
 ## Audit Trail

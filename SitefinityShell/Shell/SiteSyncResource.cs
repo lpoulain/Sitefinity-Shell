@@ -12,6 +12,7 @@ using System.Web.Script.Serialization;
 using Telerik.Sitefinity.Configuration;
 using Telerik.Sitefinity.SiteSync.Configuration;
 using SitefinitySupport.Logs;
+using Telerik.Sitefinity.Services;
 
 namespace SitefinitySupport.Shell
 {
@@ -37,7 +38,22 @@ namespace SitefinitySupport.Shell
 			string URL = server.ServerAddress;
 
 			var credentials = new NetworkCredential(server.UserName, server.Password);
-			var handler = new HttpClientHandler { Credentials = credentials };
+			ShellHttpClient client = new ShellHttpClient(URL, credentials);
+			client.AddHeader(new MediaTypeWithQualityHeaderValue("application/json"));
+			client.Call();
+
+			string data = client.getResponse();
+			JavaScriptSerializer JSserializer = new JavaScriptSerializer();
+			//deserialize to your class
+			List<SitefinitySupport.Logs.SyncItem> items = JSserializer.Deserialize<List<SitefinitySupport.Logs.SyncItem>>(data);
+
+			SitefinitySupport.Logs.Synchronization sync = new SitefinitySupport.Logs.Synchronization();
+			sync.items = items;
+
+			return sync;
+
+
+/*			var handler = new HttpClientHandler { Credentials = credentials };
 
 			HttpClient client = new HttpClient(handler);
 			client.BaseAddress = new Uri(URL);
@@ -45,9 +61,10 @@ namespace SitefinitySupport.Shell
 			// Add an Accept header for JSON format.
 			client.DefaultRequestHeaders.Accept.Add(
 			new MediaTypeWithQualityHeaderValue("application/json"));
-
+			
 			// List data response.
 			HttpResponseMessage response = client.GetAsync("api/shellservice").Result;  // Blocking call!
+			
 			if (response.IsSuccessStatusCode)
 			{
 				// Parse the response body. Blocking!
@@ -65,6 +82,7 @@ namespace SitefinitySupport.Shell
 			{
 				return null;
 			}
+ * */
 		}
 		
 		public override string Serialize_Result()
@@ -130,11 +148,72 @@ namespace SitefinitySupport.Shell
 			return logs.GetSyncItems();
 		}
 
+		public override void CMD_call(Arguments args)
+		{
+			ShellHttpClient http;
+			string url = args.FirstKey;
+			output = new List<string>();
+
+			if (url == "target")
+			{
+				SiteSyncConfig config = Config.Get<SiteSyncConfig>();
+				var servers = config.ReceivingServers.Values;
+
+				if (servers.Count == 0) throw new Exception("No SiteSync target defined");
+
+				foreach (var server in servers)
+				{
+					http = new ShellHttpClient(server.ServerAddress);
+					try
+					{
+						http.Call();
+						output.Add(String.Format("[{0}]: OK", server.ServerAddress));
+					}
+					catch (Exception ex)
+					{
+						output.Add(String.Format("[{0}]: {1}", server.ServerAddress, ex.Message));
+					}
+				}
+
+				return;
+			}
+
+			if (url == "nlb")
+			{
+				SystemConfig config = Config.Get<SystemConfig>();
+				var nodes = config.LoadBalancingConfig.URLS;
+
+				if (nodes.Count == 0) throw new Exception("No Load Balancing node defined");
+
+				foreach (var node in nodes)
+				{
+					http = new ShellHttpClient(node.Value);
+					try
+					{
+						http.Call();
+						output.Add(String.Format("[{0}]: OK", node.Value));
+					}
+					catch (Exception ex)
+					{
+						output.Add(String.Format("[{0}]: {1}", node.Value, ex.Message));
+					}
+				}
+
+				return;
+			}
+
+			http = new ShellHttpClient(url);
+			output.Add(http.Call());
+		}
+
 		public override void CMD_help()
 		{
 			summary =
 				"list [detail]: displays the synchronizations that failed\n" +
-				"compare [detail]: same as list but compares with the logs from the destination\n";
+				"compare [detail]: same as list but compares with the logs from the destination\n" +
+				"call [url]: call a URL from Sitefinity\n" +
+				"call target: call the SiteSync target URL(s)\n" +
+				"call nlb: call the Load Balancing node URLs\n";
 
 			base.CMD_help();
 		}

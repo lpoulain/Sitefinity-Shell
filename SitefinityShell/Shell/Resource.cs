@@ -31,6 +31,7 @@ namespace SitefinitySupport.Shell
 		public virtual void CMD_compare(Arguments args) { svc.Set_Error("Command not supported for " + name); }
 		public virtual void CMD_republish(Arguments args) { svc.Set_Error("Command not supported for " + name); }
 		public virtual void CMD_provider(Arguments args, Guid rootId) { svc.Set_Error("Command not supported for " + name); }
+		public virtual void CMD_call(Arguments args) { svc.Set_Error("Command not supported for " + name); }
 		public virtual void CMD_display(Arguments args)
 		{
 			display = args.Keys;
@@ -42,6 +43,7 @@ namespace SitefinitySupport.Shell
 				"pages: switch to pages\n" +
 				"bpages: switch to backend pages\n" +
 				"errors: switch to the error logs\n" +
+				"audit: switch to the audit trail\n" +
 				"docs: switch to files & documents\n" +
 				"images: switch to images\n" +
 				"videos: switch to videos\n" +
